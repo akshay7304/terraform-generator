@@ -1,0 +1,24 @@
+{
+  "name": "demo-app",
+  "region": "us-east-1",
+  "vpcCidr": "10.0.0.0/16",
+  "services": {
+    "s3Bucket": true,
+    "rds": {
+      "enabled": true,
+      "engine": "postgres",
+      "instanceClass": "db.t3.micro",
+      "dbName": "myappdb",
+      "username": "admin",
+      "password": "SuperSecret123!"
+    },
+    "ecsCluster": {
+      "enabled": true
+    }
+  },
+  "tags": {
+    "owner": "platform-team",
+    "env": "dev",
+    "project": "terraform-generator"
+  }
+}

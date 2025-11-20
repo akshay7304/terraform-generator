@@ -1,0 +1,69 @@
+
+# Maven Target Directory
+
+/target/
+**/target/
+
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+
+# Logs
+
+/logs/
+/*.log
+*.out
+
+
+# Spring Boot Specific
+
+/.env
+/.env.*
+/application-*.properties
+/application-*.yml
+
+
+# IDE - IntelliJ
+
+/.idea/
+/*.iml
+/out/
+
+
+# IDE - Eclipse
+
+.project
+.classpath
+.settings/
+bin/
+
+
+# OS Files
+
+.DS_Store
+Thumbs.db
+
+
+# Java
+
+*.class
+
+
+# Compression / Archives
+
+*.zip
+*.tar
+*.gz
+*.rar
+
+
+# Freemarker / Template cache
+
+*.ftl.cache
+
+
+# Backup Files
+
+*~
