@@ -35,33 +35,40 @@ The application validates the request payload, processes the templates, and retu
 
 ## Project Structure
 
-src/main/java/com/example/tfgenerator/
-  ├── controller/
-  │      EnvironmentController.java
-  ├── service/
-  │      TerraformGenerationService.java
-  │      TerraformTemplateService.java
-  ├── validator/
-  │      EnvironmentValidator.java
-  ├── dto/
-  │      EnvironmentRequest.java
-  │      Services.java
-  │      RdsConfig.java
-  │      TerraformResponse.java
-  ├── exception/
-  │      ValidationException.java
-  └── TerraformGeneratorApplication.java
+```
+src/
+└── main/
+    ├── java/
+    │   └── com/example/tfgenerator/
+    │       ├── controller/
+    │       │   └── EnvironmentController.java
+    │       ├── service/
+    │       │   ├── TerraformGenerationService.java
+    │       │   └── TerraformTemplateService.java
+    │       ├── validator/
+    │       │   └── EnvironmentValidator.java
+    │       ├── dto/
+    │       │   ├── EnvironmentRequest.java
+    │       │   ├── Services.java
+    │       │   ├── RdsConfig.java
+    │       │   └── TerraformResponse.java
+    │       ├── exception/
+    │       │   └── ValidationException.java
+    │       └── TerraformGeneratorApplication.java
+    │
+    └── resources/
+        └── templates/
+            └── terraform/
+                ├── main.tf.ftl
+                ├── variables.tf.ftl
+                ├── vpc.tf.ftl
+                ├── services_s3.tf.ftl
+                ├── services_rds.tf.ftl
+                ├── services_ecs.tf.ftl
+                ├── outputs.tf.ftl
+                └── terraform.tfvars.ftl
 
-src/main/resources/templates/terraform/
-  ├── main.tf.ftl
-  ├── variables.tf.ftl
-  ├── vpc.tf.ftl
-  ├── services_s3.tf.ftl
-  ├── services_rds.tf.ftl
-  ├── services_ecs.tf.ftl
-  ├── outputs.tf.ftl
-  └── terraform.tfvars.ftl
-
+```
 ---
 
 ## How to Run
