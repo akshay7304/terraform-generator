@@ -13,7 +13,7 @@ import com.example.tfgenerator.dto.EcsConfig;
 import com.example.tfgenerator.dto.EnvironmentRequest;
 import com.example.tfgenerator.dto.RdsConfig;
 import com.example.tfgenerator.dto.Services;
-import com.example.tfgenerator.model.TerraformProject;
+import com.example.tfgenerator.model.TerraformResponse;
 
 import freemarker.template.Configuration;
 
@@ -36,7 +36,7 @@ public class TerraformGenerationServiceTest {
     @Test
     public void testGenerateWithAllServices() {
         EnvironmentRequest request = createFullRequest();
-        TerraformProject project = generationService.generate(request);
+        TerraformResponse project = generationService.generate(request);
         assertNotNull(project);
         assertNotNull(project.getMainTf());
         assertNotNull(project.getVariablesTf());

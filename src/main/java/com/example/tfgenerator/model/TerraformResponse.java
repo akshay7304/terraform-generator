@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class TerraformProject {
+public class TerraformResponse {
 
     @JsonProperty("main_tf")
     private String mainTf;

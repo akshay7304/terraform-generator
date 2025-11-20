@@ -1,15 +1,19 @@
 package com.example.tfgenerator.service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.example.tfgenerator.dto.EnvironmentRequest;
-import com.example.tfgenerator.model.TerraformProject;
+import com.example.tfgenerator.model.TerraformResponse;
 import com.example.tfgenerator.util.CidrUtil;
 
 @Service
@@ -24,40 +28,40 @@ public class TerraformGenerationService {
         this.templateService = templateService;
     }
 
-    public TerraformProject generate(EnvironmentRequest request) {
+    public TerraformResponse generate(EnvironmentRequest request) {
     	LOGGER.info("Start generating Terraform project for: {}", request.getName());
         Map<String,Object> model = prepareDataModel(request);
-        TerraformProject project = new TerraformProject();
+        TerraformResponse response = new TerraformResponse();
 
         LOGGER.info("Generating Terraform files for {}", request.getName());
 
-        project.setMainTf(templateService.render("main.tf.ftl", model));
-        project.setVariablesTf(templateService.render("variables.tf.ftl", model));
-        project.setVpcTf(templateService.render("vpc.tf.ftl", model));
-        project.setOutputsTf(templateService.render("outputs.tf.ftl", model));
-        project.setTerraformTfvars(templateService.render("terraform.tfvars.ftl", model));
+        response.setMainTf(templateService.render("main.tf.ftl", model));
+        response.setVariablesTf(templateService.render("variables.tf.ftl", model));
+        response.setVpcTf(templateService.render("vpc.tf.ftl", model));
+        response.setOutputsTf(templateService.render("outputs.tf.ftl", model));
+        response.setTerraformTfvars(templateService.render("terraform.tfvars.ftl", model));
 
         if (Boolean.TRUE.equals(request.getServices() != null ? request.getServices().getS3Bucket() : false)) {
-            project.setServicesS3Tf(templateService.render("services_s3.tf.ftl", model));
+            response.setServicesS3Tf(templateService.render("services_s3.tf.ftl", model));
         } else {
-            project.setServicesS3Tf("");
+            response.setServicesS3Tf("");
         }
 
         if (request.getServices() != null && request.getServices().getRds() != null && Boolean.TRUE.equals(request.getServices().getRds().getEnabled())) {
-            project.setServicesRdsTf(templateService.render("services_rds.tf.ftl", model));
+            response.setServicesRdsTf(templateService.render("services_rds.tf.ftl", model));
         } else {
-            project.setServicesRdsTf("");
+            response.setServicesRdsTf("");
         }
 
         if (request.getServices() != null && request.getServices().getEcsCluster() != null && Boolean.TRUE.equals(request.getServices().getEcsCluster().getEnabled())) {
-            project.setServicesEcsTf(templateService.render("services_ecs.tf.ftl", model));
+            response.setServicesEcsTf(templateService.render("services_ecs.tf.ftl", model));
         } else {
-            project.setServicesEcsTf("");
+            response.setServicesEcsTf("");
         }
 
         LOGGER.debug("Terraform generation complete for {}", request.getName());
         LOGGER.info("Finished generating Terraform project for: {}", request.getName());
-        return project;
+        return response;
     }
 
     private Map<String,Object> prepareDataModel(EnvironmentRequest request) {
@@ -89,4 +93,47 @@ public class TerraformGenerationService {
 
         return model;
     }
+    
+    public byte[] generateZip(TerraformResponse response) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos);
+
+        addToZip(zos, "main.tf", response.getMainTf());
+        addToZip(zos, "variables.tf", response.getVariablesTf());
+        addToZip(zos, "vpc.tf", response.getVpcTf());
+        addToZip(zos, "services_s3.tf", response.getServicesS3Tf());
+        addToZip(zos, "services_rds.tf", response.getServicesRdsTf());
+        addToZip(zos, "services_ecs.tf", response.getServicesEcsTf());
+        addToZip(zos, "outputs.tf", response.getOutputsTf());
+        addToZip(zos, "terraform.tfvars", response.getTerraformTfvars());
+
+        zos.close();
+        return baos.toByteArray();
+    }
+
+    private void addToZip(ZipOutputStream zos, String fileName, String content) throws IOException {
+        if (content == null || content.isBlank()) return;
+
+        ZipEntry entry = new ZipEntry(fileName);
+        zos.putNextEntry(entry);
+        zos.write(content.getBytes());
+        zos.closeEntry();
+    }
+    
+    public TerraformResponse generateTerraformProject(EnvironmentRequest request) {
+    	Map<String,Object> model = prepareDataModel(request);
+        TerraformResponse response = new TerraformResponse();
+        response.setMainTf(templateService.render("main.tf.ftl", model));
+        response.setVariablesTf(templateService.render("variables.tf.ftl", model));
+        response.setVpcTf(templateService.render("vpc.tf.ftl", model));
+        response.setServicesS3Tf(templateService.render("services_s3.tf.ftl", model));
+        response.setServicesRdsTf(templateService.render("services_rds.tf.ftl", model));
+        response.setServicesEcsTf(templateService.render("services_ecs.tf.ftl", model));
+        response.setOutputsTf(templateService.render("outputs.tf.ftl", model));
+        response.setTerraformTfvars(templateService.render("terraform.tfvars.ftl", model));
+
+        return response;
+    }
+
+
 }

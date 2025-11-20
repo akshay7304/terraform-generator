@@ -2,6 +2,9 @@ package com.example.tfgenerator.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,7 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tfgenerator.dto.ApiResponse;
 import com.example.tfgenerator.dto.EnvironmentRequest;
-import com.example.tfgenerator.model.TerraformProject;
+import com.example.tfgenerator.exception.ValidationException;
+import com.example.tfgenerator.model.TerraformResponse;
 import com.example.tfgenerator.service.TerraformGenerationService;
 import com.example.tfgenerator.validator.EnvironmentValidator;
 
@@ -29,13 +33,37 @@ public class EnvironmentController {
     }
 
     @PostMapping("/environments")
-    public ResponseEntity<ApiResponse<TerraformProject>> generateEnvironment(@RequestBody EnvironmentRequest request) {
+    public ResponseEntity<ApiResponse<TerraformResponse>> generateEnvironment(@RequestBody EnvironmentRequest request) {
         LOGGER.info("Received generate environment request: name={}, region={}", request.getName(), request.getRegion());
         validator.validate(request);
-        TerraformProject project = generationService.generate(request);
+        TerraformResponse response = generationService.generate(request);
         LOGGER.debug("Generated terraform project with files: main_tf length={}, vpc_tf length={}", 
-                project.getMainTf() != null ? project.getMainTf().length() : 0,
-                project.getVpcTf() != null ? project.getVpcTf().length() : 0);
-        return ResponseEntity.ok(new ApiResponse<TerraformProject>(true, project, null));
+                response.getMainTf() != null ? response.getMainTf().length() : 0,
+                response.getVpcTf() != null ? response.getVpcTf().length() : 0);
+        return ResponseEntity.ok(new ApiResponse<TerraformResponse>(true, response, null));
+    }
+    
+    @PostMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<byte[]> downloadTerraform(@RequestBody EnvironmentRequest request) {
+        try {
+            validator.validate(request);
+
+            TerraformResponse response = generationService.generateTerraformProject(request);
+            byte[] zipBytes = generationService.generateZip(response);
+
+            String fileName = request.getName() + ".zip";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+            headers.set(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
+            headers.setContentLength(zipBytes.length);
+
+            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+
+        } catch (ValidationException e) {
+            return ResponseEntity.badRequest().body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 }

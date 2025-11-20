@@ -1,9 +1,9 @@
 # Terraform Environment Generator
 
-This project provides a REST API for dynamically generating Terraform configuration files based on an environment specification.  
+This project provides a REST API for dynamically generating Terraform configuration files based on an environment specification.
 It is built using Spring Boot and FreeMarker templates and is designed to produce production-grade Terraform code for AWS resources such as VPC, S3, RDS, and ECS.
 
-The application validates the request payload, processes the templates, and returns the generated Terraform files as JSON.
+The application validates the request payload, processes the templates, and returns the generated Terraform files either as JSON or as a downloadable ZIP archive.
 
 ---
 
@@ -18,15 +18,16 @@ The application validates the request payload, processes the templates, and retu
   - S3 bucket (optional)
   - RDS (PostgreSQL/MySQL, optional)
   - ECS Cluster (optional)
-- Clean architecture with DTOs, services, validators, and custom exceptions.
-- Unit tests included for validation and generation logic.
+- Clean architecture with DTOs, services, validators, templates, and custom exceptions.
+- Includes unit tests for validation and generation logic.
+- Supports ZIP download endpoint for full project creation.
 
 ---
 
 ## Technology Stack
 
 - Java 17+
-- Spring Boot 2.x
+- Spring Boot
 - Maven
 - FreeMarker Template Engine
 - JUnit 5
@@ -36,39 +37,34 @@ The application validates the request payload, processes the templates, and retu
 ## Project Structure
 
 ```
-src/
-└── main/
-    ├── java/
-    │   └── com/example/tfgenerator/
-    │       ├── controller/
-    │       │   └── EnvironmentController.java
-    │       ├── service/
-    │       │   ├── TerraformGenerationService.java
-    │       │   └── TerraformTemplateService.java
-    │       ├── validator/
-    │       │   └── EnvironmentValidator.java
-    │       ├── dto/
-    │       │   ├── EnvironmentRequest.java
-    │       │   ├── Services.java
-    │       │   ├── RdsConfig.java
-    │       │   └── TerraformResponse.java
-    │       ├── exception/
-    │       │   └── ValidationException.java
-    │       └── TerraformGeneratorApplication.java
-    │
-    └── resources/
-        └── templates/
-            └── terraform/
-                ├── main.tf.ftl
-                ├── variables.tf.ftl
-                ├── vpc.tf.ftl
-                ├── services_s3.tf.ftl
-                ├── services_rds.tf.ftl
-                ├── services_ecs.tf.ftl
-                ├── outputs.tf.ftl
-                └── terraform.tfvars.ftl
+src/main/java/com/example/tfgenerator/
+├── controller/
+│   └── EnvironmentController.java
+├── service/
+│   ├── TerraformGenerationService.java
+│   └── TerraformTemplateService.java
+├── validator/
+│   └── EnvironmentValidator.java
+├── dto/
+│   ├── EnvironmentRequest.java
+│   ├── Services.java
+│   ├── RdsConfig.java
+│   └── TerraformResponse.java
+├── exception/
+│   └── ValidationException.java
+└── TerraformGeneratorApplication.java
 
+src/main/resources/templates/terraform/
+├── main.tf.ftl
+├── variables.tf.ftl
+├── vpc.tf.ftl
+├── services_s3.tf.ftl
+├── services_rds.tf.ftl
+├── services_ecs.tf.ftl
+├── outputs.tf.ftl
+└── terraform.tfvars.ftl
 ```
+
 ---
 
 ## How to Run
@@ -85,51 +81,76 @@ mvn clean install
 mvn spring-boot:run
 ```
 
-Application runs at:
+The application runs at:
+
+```
+http://localhost:8080
+```
+
+It's deployed on Render:
 
 ```
 https://terraform-generator-demo.onrender.com
 ```
 
+(If the cloud deployment is inactive, use localhost.)
+
 ---
 
-## API Endpoint
+## API Endpoints
 
-### POST  
+### 1. Generate Terraform (JSON response)
+
+**POST**
 ```
+http://localhost:8080/api/v1/environments
 https://terraform-generator-demo.onrender.com/api/v1/environments
 ```
 
-This endpoint accepts a JSON request describing the environment and returns the generated Terraform files.
+### 2. Download ZIP of Terraform project
+
+**POST**
+```
+http://localhost:8080/api/v1/download
+https://terraform-generator-demo.onrender.com/api/v1/download
+```
+
+The browser/Postman will download `{name}.zip`. Please on postman while downloading zip click the button Send and Download.
 
 ---
 
-## Example Request
+## Example Request (Ideal)
 
 ```
 {
   "name": "demo-app",
   "region": "us-east-1",
   "vpc_cidr": "10.0.0.0/16",
+
   "services": {
     "s3_bucket": true,
+
     "rds": {
       "enabled": true,
       "engine": "postgres",
       "instance_class": "db.t3.micro",
-      "db_name": "mydb",
-      "username": "admin",
-      "password": "StrongPass123!"
+      "db_name": "myappdb",
+      "username": "adminuser",
+      "password": "AdminPass123!"
     },
+
     "ecs_cluster": {
       "enabled": true
     }
   },
+
   "tags": {
     "owner": "platform-team",
-    "env": "dev"
+    "env": "dev",
+    "project": "full-stack-deployment"
   }
 }
+
 ```
 
 ---
@@ -152,42 +173,59 @@ This endpoint accepts a JSON request describing the environment and returns the 
 }
 ```
 
-Each field contains the full Terraform file content.
-
 ---
 
 ## Validation Rules
 
-Validation is performed inside `EnvironmentValidator`.
+Validation occurs in `EnvironmentValidator`.
 
 ### Required Fields:
 - name
-- region (must be one of the supported AWS regions)
-- vpc_cidr
+- region (must be valid AWS region)
+- vpcCidr
 - services
 
-### RDS Validation (when enabled)
-- engine must be "postgres" or "mysql"
-- instance_class is required
-- db_name is required
-- username is required
-- password must be at least 8 characters
+### RDS Rules (when enabled):
+- engine must be postgres/mysql
+- instanceClass required
+- dbName required
+- username required
+- password ≥ 8 chars
 
-If validation fails:
-- All errors are aggregated
-- A ValidationException is thrown
-- HTTP 400 is returned
+Errors are aggregated and returned as:
+
+```
+HTTP 400 Bad Request
+```
 
 ---
 
-## Unit Tests
+## ZIP Download
 
-Unit tests included for:
+The `/download` endpoint automatically returns a ZIP containing:
 
-- Valid request scenarios
-- Invalid request scenarios
-- RDS validation failures
-- Terraform file generation logic (sample permutations)
+```
+main.tf
+variables.tf
+vpc.tf
+services_s3.tf
+services_rds.tf
+services_ecs.tf
+outputs.tf
+terraform.tfvars
+```
+
+Filename = `{name}.zip`
+
+---
+
+## Unit Tests Included
+
+Tests cover:
+- Request validation
+- RDS validation
+- Missing field validation
+- Terraform generation permutations
 
 Run tests:
 
@@ -199,40 +237,45 @@ mvn test
 
 ## Assumptions
 
-- AWS is the only cloud supported in this version.
-- A standard production VPC layout is always generated.
-- RDS instances are always placed in the private subnet.
-- S3 bucket names append AWS account ID for uniqueness.
-- ECS uses Fargate and Fargate Spot capacity providers.
-- Returned Terraform is not applied by this service; applying is left to the user.
+- AWS is the only supported cloud.
+- RDS is always created in private subnet.
+- S3 bucket naming includes AWS account ID.
+- ECS uses Fargate + Fargate Spot.
+- Terraform is only generated, not executed.
 
 ---
 
-## Extending to Multi-Cloud
+## Extending for Multi-Cloud
 
-To support Azure, GCP, or hybrid deployments:
+To support Azure/GCP:
 
-1. Introduce a cloud field in the request.
-2. Maintain separate template directories:
+1. Add `cloud` field in request.
+2. Create folders:
+   ```
    templates/terraform/aws/
    templates/terraform/azure/
    templates/terraform/gcp/
-3. Implement a strategy pattern for generation:
-   TerraformGeneratorStrategy
-   AwsTerraformGenerator
-   AzureTerraformGenerator
-   GcpTerraformGenerator
-4. Add cloud-specific resources.
-5. Introduce reusable Terraform modules.
+   ```
+3. Implement strategy pattern:
+   - `TerraformGeneratorStrategy`
+   - `AwsTerraformGenerator`
+   - `AzureTerraformGenerator`
+   - `GcpTerraformGenerator`
+4. Add cloud-specific templates and modules.
+5. Add service selection logic in `TerraformGenerationService`.
 
 ---
 
 ## Logging
 
-Logs are written to:
+Logs are stored at:
 
 ```
 /logs/app.log
 ```
 
-Logs include incoming requests, validation errors, template rendering status, and generation steps.
+Includes:
+- Incoming requests
+- Validation failures
+- Template rendering
+- ZIP generation
