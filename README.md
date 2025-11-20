@@ -88,7 +88,7 @@ mvn spring-boot:run
 Application runs at:
 
 ```
-http://localhost:8080
+https://terraform-generator-demo.onrender.com
 ```
 
 ---
@@ -97,7 +97,7 @@ http://localhost:8080
 
 ### POST  
 ```
-http://localhost:8080/api/v1/environments
+https://terraform-generator-demo.onrender.com/api/v1/environments
 ```
 
 This endpoint accepts a JSON request describing the environment and returns the generated Terraform files.
@@ -236,4 +236,3 @@ Logs are written to:
 ```
 
 Logs include incoming requests, validation errors, template rendering status, and generation steps.
-
