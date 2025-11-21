@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.tfgenerator.dto.ApiResponse;
 import com.example.tfgenerator.dto.EnvironmentRequest;
-import com.example.tfgenerator.exception.ValidationException;
 import com.example.tfgenerator.model.TerraformResponse;
 import com.example.tfgenerator.service.TerraformGenerationService;
 import com.example.tfgenerator.validator.EnvironmentValidator;
@@ -45,25 +44,19 @@ public class EnvironmentController {
     
     @PostMapping(value = "/download", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<byte[]> downloadTerraform(@RequestBody EnvironmentRequest request) {
-        try {
-            validator.validate(request);
 
-            TerraformResponse response = generationService.generateTerraformProject(request);
-            byte[] zipBytes = generationService.generateZip(response);
+        validator.validate(request);
 
-            String fileName = request.getName() + ".zip";
+        TerraformResponse response = generationService.generateTerraformProject(request);
+        byte[] zipBytes = generationService.generateZip(response);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
-            headers.set(HttpHeaders.CONTENT_TYPE, "application/octet-stream");
-            headers.setContentLength(zipBytes.length);
+        String fileName = request.getName() + ".zip";
 
-            return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentDispositionFormData("attachment", fileName);
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentLength(zipBytes.length);
 
-        } catch (ValidationException e) {
-            return ResponseEntity.badRequest().body(null);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
+        return new ResponseEntity<>(zipBytes, headers, HttpStatus.OK);
     }
 }

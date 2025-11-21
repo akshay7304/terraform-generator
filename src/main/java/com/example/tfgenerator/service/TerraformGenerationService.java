@@ -94,30 +94,38 @@ public class TerraformGenerationService {
         return model;
     }
     
-    public byte[] generateZip(TerraformResponse response) throws IOException {
+    public byte[] generateZip(TerraformResponse response) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ZipOutputStream zos = new ZipOutputStream(baos);
 
-        addToZip(zos, "main.tf", response.getMainTf());
-        addToZip(zos, "variables.tf", response.getVariablesTf());
-        addToZip(zos, "vpc.tf", response.getVpcTf());
-        addToZip(zos, "services_s3.tf", response.getServicesS3Tf());
-        addToZip(zos, "services_rds.tf", response.getServicesRdsTf());
-        addToZip(zos, "services_ecs.tf", response.getServicesEcsTf());
-        addToZip(zos, "outputs.tf", response.getOutputsTf());
-        addToZip(zos, "terraform.tfvars", response.getTerraformTfvars());
-
-        zos.close();
-        return baos.toByteArray();
+        try {
+			addToZip(zos, "main.tf", response.getMainTf());
+			addToZip(zos, "variables.tf", response.getVariablesTf());
+	        addToZip(zos, "vpc.tf", response.getVpcTf());
+	        addToZip(zos, "services_s3.tf", response.getServicesS3Tf());
+	        addToZip(zos, "services_rds.tf", response.getServicesRdsTf());
+	        addToZip(zos, "services_ecs.tf", response.getServicesEcsTf());
+	        addToZip(zos, "outputs.tf", response.getOutputsTf());
+	        addToZip(zos, "terraform.tfvars", response.getTerraformTfvars());
+	        zos.close();
+	        return baos.toByteArray();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to generate ZIP file", e);
+		}
     }
 
-    private void addToZip(ZipOutputStream zos, String fileName, String content) throws IOException {
+    private void addToZip(ZipOutputStream zos, String fileName, String content){
         if (content == null || content.isBlank()) return;
 
         ZipEntry entry = new ZipEntry(fileName);
-        zos.putNextEntry(entry);
-        zos.write(content.getBytes());
-        zos.closeEntry();
+        try {
+			zos.putNextEntry(entry);
+			zos.write(content.getBytes());
+	        zos.closeEntry();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed writing " + fileName + " to ZIP", e);
+		}
+        
     }
     
     public TerraformResponse generateTerraformProject(EnvironmentRequest request) {
