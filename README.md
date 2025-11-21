@@ -107,12 +107,85 @@ http://localhost:8080/api/v1/environments
 https://terraform-generator-demo.onrender.com/api/v1/environments
 ```
 
+**CURL TO Test**
+```
+curl --location 'https://terraform-generator-demo.onrender.com/api/v1/environments' \
+--header 'Content-Type: application/json' \
+--data '{
+  "name": "demo-app",
+  "region": "us-east-1",
+  "vpc_cidr": "10.0.0.0/16",
+
+  "services": {
+    "s3_bucket": true,
+
+    "rds": {
+      "enabled": true,
+      "engine": "postgres",
+      "instance_class": "db.t3.micro",
+      "db_name": "myappdb",
+      "username": "adminuser",
+      "password": "AdminPass123!"
+    },
+
+    "ecs_cluster": {
+      "enabled": true
+    }
+  },
+
+  "tags": {
+    "owner": "platform-team",
+    "env": "dev",
+    "project": "full-stack-deployment"
+  }
+}
+'
+
+```
+
 ### 2. Download ZIP of Terraform project
 
 **POST**
 ```
 http://localhost:8080/api/v1/download
 https://terraform-generator-demo.onrender.com/api/v1/download
+```
+
+**CURL TO Test**
+
+```
+curl --location 'https://terraform-generator-demo.onrender.com/api/v1/download' \
+--header 'Content-Type: application/json' \
+--data '{
+  "name": "demo-app",
+  "region": "us-east-1",
+  "vpc_cidr": "10.0.0.0/16",
+
+  "services": {
+    "s3_bucket": true,
+
+    "rds": {
+      "enabled": true,
+      "engine": "postgres",
+      "instance_class": "db.t3.micro",
+      "db_name": "myappdb",
+      "username": "adminuser",
+      "password": "AdminPass123!"
+    },
+
+    "ecs_cluster": {
+      "enabled": true
+    }
+  },
+
+  "tags": {
+    "owner": "platform-team",
+    "env": "dev",
+    "project": "full-stack-deployment"
+  }
+}
+'
+
 ```
 
 The browser/Postman will download `{name}.zip`. Please on postman while downloading zip click the button Send and Download.
