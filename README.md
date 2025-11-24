@@ -188,7 +188,7 @@ curl --location 'https://terraform-generator-demo.onrender.com/api/v1/download' 
 
 ```
 
-The browser/Postman will download `{name}.zip`. Please on postman while downloading zip click the button Send and Download.
+The browser/Postman will download `{name}.zip`. **Please on postman while downloading zip click the button Send and Download**.
 
 ---
 
